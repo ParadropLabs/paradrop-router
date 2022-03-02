@@ -8,8 +8,6 @@ from __future__ import print_function
 import errno
 import os
 
-from paradrop.lib.utils.yaml import yaml
-
 
 def makedirs(p):
     """
@@ -31,21 +29,6 @@ def makedirs(p):
         else:
             raise e
     return False
-
-
-def read_yaml_file(path, default=None):
-    """
-    Read the contents of a file and interpret as YAML.
-
-    default: return value if the file cannot be read.
-    """
-    try:
-        with open(path, "r") as source:
-            return yaml.load(source)
-    except IOError:
-        return default
-    except OSError:
-        return default
 
 
 def safe_remove(path):

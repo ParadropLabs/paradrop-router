@@ -1,7 +1,7 @@
 from mock import MagicMock
 
 
-from paradrop.confd import manager, network, parprouted
+from router import manager, network, parprouted
 
 
 def test_definitions():

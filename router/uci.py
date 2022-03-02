@@ -4,16 +4,16 @@
 ###################################################################
 
 import os
+import shutil
 
 import six
 
-from paradrop.base.output import out
-from paradrop.base import settings
-from paradrop.lib.utils import pdos, pdosq
+from . import out
+from . import pdosq
 
 
 def getSystemConfigDir():
-    base = settings.UCI_CONFIG_DIR
+    base = os.environ.get("UCI_CONFIG_DIR", "/etc/config")
     pdosq.makedirs(base)
     return base
 
@@ -353,10 +353,10 @@ class UCIConfig:
         """
             Puts a backup of this config to the location specified in @backupPath.
         """
-        pdosq.makedirs(settings.UCI_BACKUP_DIR)
-        backupPath = "{}/{}-{}".format(settings.UCI_BACKUP_DIR, self.myname,
-                backupToken)
-        pdos.copy(self.filepath, backupPath)
+        backup_dir = os.environ.get("UCI_BACKUP_DIR", "/tmp/config")
+        pdosq.makedirs(backup_dir)
+        backupPath = "{}/{}-{}".format(backup_dir, self.myname, backupToken)
+        shutil.copy(self.filepath, backupPath)
 
     def restore(self, backupToken, saveBackup=True):
         """
@@ -367,13 +367,13 @@ class UCIConfig:
                 saveBackup : A flag to keep a backup copy or delete it (default is keep backup)
         """
         # Make sure it exists!
-        backupPath = "{}/{}-{}".format(settings.UCI_BACKUP_DIR, self.myname,
-                backupToken)
-        if(pdos.exists(backupPath)):
+        backup_dir = os.environ.get("UCI_BACKUP_DIR", "/tmp/config")
+        backupPath = "{}/{}-{}".format(backup_dir, self.myname, backupToken)
+        if(os.path.exists(backupPath)):
             if(saveBackup):
-                pdos.copy(backupPath, self.filepath)
+                shutil.copy(backupPath, self.filepath)
             else:
-                pdos.move(backupPath, self.filepath)
+                shutil.move(backupPath, self.filepath)
         else:
             # This might be ok if they didn't actually make any changes
             out.warn('Cannot restore, %s missing backup (might be OK if no changes made)\n' % (self.myname))
@@ -437,7 +437,7 @@ class UCIConfig:
         # Now write to disk
         try:
             out.info('Saving %s to disk\n' % (self.filepath))
-            fd = pdos.open(self.filepath, 'w')
+            fd = open(self.filepath, 'w')
             fd.write(output)
 
             # Guarantee that its written to disk before we close
@@ -453,7 +453,7 @@ class UCIConfig:
         """Reads in the config file."""
         lines = []
         try:
-            fd = pdos.open(self.filepath, 'r')
+            fd = open(self.filepath, 'r')
 
             while(True):
                 line = fd.readline()

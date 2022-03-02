@@ -1,14 +1,13 @@
 import tempfile
 
 from mock import MagicMock, patch
-from nose.tools import assert_raises
 
 
 def test_CommandList():
     """
     Test the CommandList class
     """
-    from paradrop.confd.command import CommandList
+    from router.command import CommandList
 
     clist = CommandList()
     clist.append(20, "b")
@@ -19,13 +18,13 @@ def test_CommandList():
     assert commands == ["a", "b", "c"]
 
 
-@patch("paradrop.confd.command.out")
+@patch("router.command.out")
 @patch("subprocess.Popen")
 def test_Command_execute(Popen, out):
     """
     Test the Command.execute method
     """
-    from paradrop.confd.command import Command
+    from router.command import Command
 
     proc = MagicMock()
     proc.stdout = ["output"]
@@ -45,12 +44,12 @@ def test_Command_execute(Popen, out):
     assert out.info.called
 
 
-@patch("paradrop.confd.command.Command.execute")
+@patch("router.command.Command.execute")
 def test_KillCommand(execute):
     """
     Test the KillCommand class
     """
-    from paradrop.confd.command import KillCommand
+    from router.command import KillCommand
 
     # Test with a numeric pid.
     command = KillCommand(12345)
@@ -63,7 +62,7 @@ def test_KillCommand(execute):
     execute.reset_mock()
 
     pidFile = tempfile.NamedTemporaryFile(delete=True)
-    pidFile.write("54321")
+    pidFile.write("54321".encode("utf-8"))
     pidFile.flush()
 
     # Test with a pid file.
@@ -73,12 +72,12 @@ def test_KillCommand(execute):
     expected = ["kill", "54321"]
     command.execute()
     assert execute.called_once_with(expected)
-    
+
     execute.reset_mock()
 
     # Test with a non-existent pid file.
     command = KillCommand("")
     assert command.getPid() is None
-    
+
     command.execute()
     assert not execute.called

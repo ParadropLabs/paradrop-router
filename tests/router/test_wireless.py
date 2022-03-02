@@ -1,8 +1,9 @@
 from mock import MagicMock
-from nose.tools import assert_raises
 
-from paradrop.confd import wireless
-from paradrop.confd.wireless import ConfigWifiIface, HostapdConfGenerator
+import pytest
+
+from router import wireless
+from router.wireless import ConfigWifiIface, HostapdConfGenerator
 
 
 def test_get_cipher_list():
@@ -239,7 +240,7 @@ def test_HostapdConfGenerator_get11rOptions():
     generator = HostapdConfGenerator(wifiIface, wifiDevice, interface)
 
     # Should raise an exception because nasid is not set.
-    assert_raises(Exception, generator.get11rOptions)
+    pytest.raises(Exception, generator.get11rOptions)
 
     wifiIface.nasid = "ap.example.com"
 

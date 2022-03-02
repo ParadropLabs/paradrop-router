@@ -1,14 +1,16 @@
 import os
+import shutil
 import tempfile
 
-from mock import MagicMock, Mock, patch
-from nose.tools import raises
+import pytest
 
-from paradrop.confd.command import Command
-from paradrop.confd.manager import ConfigManager
-from paradrop.confd.network import ConfigInterface
-from paradrop.confd.wireless import ConfigWifiDevice, ConfigWifiIface
-from paradrop.lib.utils import pdos
+from builtins import str
+from mock import MagicMock, Mock, patch
+
+from router.command import Command
+from router.manager import ConfigManager
+from router.network import ConfigInterface
+from router.wireless import ConfigWifiDevice, ConfigWifiIface
 
 CONFIG_FILE = "/tmp/test-config"
 WRITE_DIR = "/tmp"
@@ -333,11 +335,9 @@ def test_config_manager():
     """
     Test the pdconf configuration manager
     """
-    from paradrop.confd.base import ConfigObject
-    from paradrop.confd.manager import findConfigFiles
-    from paradrop.base import settings
+    from router.base import ConfigObject
+    from router.manager import findConfigFiles
 
-    settings.loadSettings(mode="unittest")
     files = findConfigFiles()
     assert isinstance(files, list)
 
@@ -362,7 +362,7 @@ def test_config_manager():
     config = Mock()
     config.getTypeAndName = Mock(return_value=("interface", "wan"))
     config.optionsMatch = Mock(return_value=True)
-    
+
     assert manager.findMatchingConfig(config, byName=False) is not None
     assert manager.findMatchingConfig(config, byName=True) is not None
 
@@ -378,16 +378,16 @@ def test_config_manager():
     config = Mock()
     config.getTypeAndName = Mock(return_value=("interface", "wan2"))
     config.optionsMatch = Mock(return_value=True)
-    
+
     assert manager.findMatchingConfig(config, byName=False) is not None
     assert manager.findMatchingConfig(config, byName=True) is not None
 
     # Test waitSystemUp method
     manager.systemUp.set()
     result = manager.waitSystemUp()
-    assert isinstance(result, basestring)
+    assert isinstance(result, str)
 
-    pdos.remove(temp)
+    shutil.rmtree(temp)
 
 
 def test_config_network_wan():
@@ -513,7 +513,6 @@ def test_config_wireless_sta():
         print(cmd)
 
 
-@raises(Exception)
 def test_config_missing_option():
     """
     Test loading a config with missing required field
@@ -522,7 +521,8 @@ def test_config_missing_option():
 
     # This will raise an exception because we are not providing the "ifname"
     # option.
-    ConfigInterface.build(manager, None, "wan", {}, None)
+    with pytest.raises(Exception):
+        ConfigInterface.build(manager, None, "wan", {}, None)
 
 
 def test_interface_update():

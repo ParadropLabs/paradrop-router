@@ -5,10 +5,6 @@ import threading
 
 import six
 
-from paradrop.base.output import out
-from paradrop.lib.utils import pdosq
-from paradrop.lib.utils.uci import UCIConfig, getSystemConfigDir
-
 # Import all of the modules defining section types, so that all subclasses of
 # ConfigObject are known. These are imported only for their side effects.
 from . import dhcp
@@ -18,8 +14,12 @@ from . import parprouted
 from . import qos
 from . import wireless
 
+from . import out
+from . import pdosq
+
 from .base import ConfigObject
 from .command import CommandList, ErrorCommand
+from .uci import UCIConfig, getSystemConfigDir
 
 
 # Silence pyflakes warning about unused imports.

@@ -1,7 +1,7 @@
 from mock import MagicMock
 
 
-from paradrop.confd import network, qos
+from router import network, qos
 
 
 def test_qos():

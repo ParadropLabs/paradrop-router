@@ -5,17 +5,17 @@ import tempfile
 from mock import patch
 
 
-CONFIG_DIR = "tests/paradrop/confd/config.d"
+CONFIG_DIR = "tests/router/config.d"
 
-@patch("paradrop.confd.manager.getSystemConfigDir")
-@patch("paradrop.confd.manager.os.path.isfile")
-@patch("paradrop.confd.manager.os.path.isdir")
-@patch("paradrop.confd.manager.os.listdir")
+@patch("router.manager.getSystemConfigDir")
+@patch("router.manager.os.path.isfile")
+@patch("router.manager.os.path.isdir")
+@patch("router.manager.os.listdir")
 def test_findConfigFiles(listdir, isdir, isfile, getSystemConfigDir):
     """
     Test the findConfigFiles function
     """
-    from paradrop.confd.manager import findConfigFiles
+    from router.manager import findConfigFiles
 
     isfile.return_value = True
     result = findConfigFiles(search="foo")
@@ -57,7 +57,7 @@ def test_bad_config():
     """
     Test how pdconf manager handles a bad configuration section
     """
-    from paradrop.confd.manager import ConfigManager
+    from router.manager import ConfigManager
 
     manager = ConfigManager(writeDir="/tmp")
 
@@ -69,7 +69,7 @@ def test_change_channel():
     """
     Test how pdconf manager handles changing a WiFi card's channel
     """
-    from paradrop.confd.manager import ConfigManager
+    from router.manager import ConfigManager
 
     # We want to use the same path for the config file at every step of the
     # test case, as this allows the manager to detect when a section is
@@ -114,12 +114,12 @@ def test_change_channel():
     shutil.rmtree(temp)
 
 
-@patch("paradrop.confd.command.Command.execute")
+@patch("router.command.Command.execute")
 def test_manager_execute(execute):
     """
     Test the manager execute method
     """
-    from paradrop.confd.manager import ConfigManager
+    from router.manager import ConfigManager
 
     manager = ConfigManager(writeDir="/tmp")
 

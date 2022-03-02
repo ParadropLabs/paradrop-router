@@ -1,6 +1,6 @@
 from mock import MagicMock
 
-from paradrop.confd import firewall
+from router import firewall
 
 
 def test_ConfigRedirect_commands_dnat():

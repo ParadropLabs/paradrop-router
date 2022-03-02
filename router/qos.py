@@ -72,7 +72,8 @@ def compute_hfsc_params(classes, capacity):
                 params['rt_d'] = cl.packetdelay
                 if cl.packetsize is not None:
                     transfer_delay = float(8 * cl.packetsize) / params['rt_m1']
-                    params['rt_d'] = max(params['rt_d'], transfer_delay)
+                    if params['rt_d'] is None or transfer_delay > params['rt_d']:
+                        params['rt_d'] = transfer_delay
 
         if params['has_ls']:
             # In steady state, each class with a link-share curve gets a
@@ -86,7 +87,8 @@ def compute_hfsc_params(classes, capacity):
                 params['ls_d'] = cl.packetdelay
                 if cl.packetsize is not None:
                     transfer_delay = float(8 * cl.packetsize) / params['ls_m1']
-                    params['ls_d'] = max(params['ls_d'], transfer_delay)
+                    if params['ls_d'] is None or transfer_delay > params['ls_d']:
+                        params['ls_d'] = transfer_delay
 
         if params['has_ul']:
             # Set steady state upper limit from a percentage of the capacity.

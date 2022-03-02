@@ -5,7 +5,7 @@ import six
 import subprocess
 import time
 
-from paradrop.base.output import out
+from . import out
 
 
 def kill(pid, kill_signal=4, timeout=8):

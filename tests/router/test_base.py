@@ -2,7 +2,7 @@ from mock import MagicMock
 
 
 def test_interpretBoolean():
-    from paradrop.confd.base import interpretBoolean
+    from router.base import interpretBoolean
 
     assert interpretBoolean("0") is False
     assert interpretBoolean("1") is True
@@ -15,7 +15,7 @@ def test_ConfigObject():
     """
     Test the ConfigObject class
     """
-    from paradrop.confd.base import ConfigObject
+    from router.base import ConfigObject
 
     config = ConfigObject()
     config.typename = "type"

@@ -1,11 +1,9 @@
-name: paradrop-agent
-base: core18
-version: 0.13.2
-summary: Paradrop agent for managing an edge computing node
+name: paradrop-router
+base: core20
+version: "0.14"
+summary: Paradrop wireless router
 description: |
-  The Paradrop agent manages hardware resources for an edge computing
-  node and enables easy deployment of services to a virtualized runtime
-  environment using Docker containers.
+  Paradrop router is a configurable network router.
 
   Visit https://paradrop.org to learn more.
 
@@ -13,79 +11,39 @@ grade: stable
 confinement: strict
 
 apps:
-  paradrop:
-    command: paradrop
+  router:
+    command: bin/router
     daemon: simple
+    environment:
+      UCI_CONFIG_DIR: $SNAP_DATA
     plugs:
-      - account-control
-      - docker
       - firewall-control
       - hardware-observe
-      - home
       - mount-observe
       - network
       - network-bind
       - network-control
-      - ppp
       - process-control
-      - pulseaudio
-      - ssh-public-keys
-      - shutdown
       - system-observe
 
-  pdlog:
-    command: pdlog
-
-hooks:
-  configure:
-    plugs: [network]
-  install:
-    plugs: [network]
-
 parts:
-  localweb:
-    plugin: dump
-    source: paradrop/localweb
-
-  pdlog:
+  router:
     plugin: python
-    python-version: python2
-    source: paradrop/tools/pdlog
-
-  paradrop:
-    plugin: python
-    source: paradrop/daemon
-    build-packages:
-      - cargo # Required for python cryptography package
-      - libffi-dev
-      - rustc # Required for python cryptography package
+    source: .
     stage-packages:
-      - libcurl4-openssl-dev
-      - libpulse0
-      - libssl-dev
-    organize:
-      # For some reason, the libpulsecommon .so file could not be found in its
-      # default install location, so move it to a place where it can be found.
-      usr/lib/$SNAPCRAFT_ARCH_TRIPLET/pulseaudio/libpulsecommon-8.0.so: usr/lib/$SNAPCRAFT_ARCH_TRIPLET/libpulsecommon-8.0.so
+      - python3
+    requirements:
+      - requirements.txt
 
   dependencies:
     plugin: nil
     stage-packages:
-      - git
       - haproxy
       - iw
-      - kmod
-      - openssh-client
       - parprouted
-      - systemd
     filesets:
       binaries:
-        - bin/kmod
-        - bin/systemctl
         - sbin/iw
-        - sbin/modprobe
-        - usr/bin/git
-        - usr/bin/ssh-keygen
         - usr/sbin/haproxy
         - usr/sbin/parprouted
       libraries:
@@ -140,14 +98,3 @@ parts:
         - bin/hostapd_cli
     prime:
       - $binaries
-
-plugs:
-  governor-control:
-    # Setting the default provider is making it difficult to build the snap on build.snapcraft.io.
-    #    default-provider: paradrop-governor
-    interface: content
-    target: $SNAP/governor
-  zerotier-control:
-    default-provider: zerotier
-    interface: content
-    target: $SNAP/zerotier

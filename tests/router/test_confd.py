@@ -385,7 +385,7 @@ def test_config_manager():
     # Test waitSystemUp method
     manager.systemUp.set()
     result = manager.waitSystemUp()
-    assert isinstance(result, str)
+    assert isinstance(result, list)
 
     shutil.rmtree(temp)
 

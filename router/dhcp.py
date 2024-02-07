@@ -38,6 +38,36 @@ class ConfigDomain(ConfigObject):
         return self.name
 
 
+class ConfigHost(ConfigObject):
+    typename = "domain"
+
+    options = [
+        ConfigOption(name="ip", type=str),
+        ConfigOption(name="mac", type=str),
+        ConfigOption(name="hostid", type=str),
+        ConfigOption(name="duid", type=str),
+        ConfigOption(name="name", type=str),
+        ConfigOption(name="tag", type=str),
+        ConfigOption(name="match_tag", type=list, default=[]),
+        ConfigOption(name="dns", type=bool, default=False),
+        ConfigOption(name="broadcast", type=bool, default=False),
+        ConfigOption(name="leasetime", type=str),
+        ConfigOption(name="instance", type=str)
+    ]
+
+    def getDnsmasqConfOptions(self):
+        parts = []
+        if self.mac:
+            parts.append(self.mac)
+        if self.name:
+            parts.append(self.name)
+        if self.ip:
+            parts.append(self.ip)
+        if self.leasetime:
+            parts.append(self.leasetime)
+        return ",".join(parts)
+
+
 class ConfigDnsmasq(ConfigObject):
     typename = "dnsmasq"
 
@@ -163,6 +193,11 @@ class ConfigDnsmasq(ConfigObject):
 
             for domain in self.findByType(allConfigs, "dhcp", "domain"):
                 outputFile.write("address=/{}/{}\n".format(domain.name, domain.ip))
+
+            outputFile.write("\n")
+
+            for host in self.findByType(allConfigs, "dhcp", "host"):
+                outputFile.write("dhcp-host={}\n".format(host.getDnsmasqConfOptions()))
 
         cmd = ["dnsmasq", "--conf-file={}".format(outputPath),
                "--pid-file={}".format(pidFile)]

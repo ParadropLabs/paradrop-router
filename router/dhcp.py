@@ -39,7 +39,7 @@ class ConfigDomain(ConfigObject):
 
 
 class ConfigHost(ConfigObject):
-    typename = "domain"
+    typename = "host"
 
     options = [
         ConfigOption(name="ip", type=str),

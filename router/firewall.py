@@ -570,10 +570,10 @@ class ConfigRedirect(ConfigObject):
     def apply(self, allConfigs):
         if self.target == "DNAT":
             commands = self.__commands_dnat(allConfigs, "--insert",
-                    self.PRIO_CONFIG_IFACE)
+                    self.PRIO_IPTABLES_RULE)
         elif self.target == "SNAT":
             commands = self.__commands_snat(allConfigs, "--insert",
-                    self.PRIO_CONFIG_IFACE)
+                    self.PRIO_IPTABLES_RULE)
         else:
             raise Exception("Unsupported target ({}) in config {} {}".format(
                 self.target, self.typename, self.name))
@@ -588,10 +588,10 @@ class ConfigRedirect(ConfigObject):
     def revert(self, allConfigs):
         if self.target == "DNAT":
             commands = self.__commands_dnat(allConfigs, "--delete",
-                    -self.PRIO_CONFIG_IFACE)
+                    -self.PRIO_IPTABLES_RULE)
         elif self.target == "SNAT":
             commands = self.__commands_snat(allConfigs, "--delete",
-                    -self.PRIO_CONFIG_IFACE)
+                    -self.PRIO_IPTABLES_RULE)
         else:
             commands = list()
 

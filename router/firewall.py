@@ -213,7 +213,8 @@ class ConfigZone(ConfigObject):
 
     options = [
         ConfigOption(name="name", required=True),
-        ConfigOption(name="network", type=list),
+        ConfigOption(name="device", type=list, default=[]),
+        ConfigOption(name="network", type=list, default=[]),
         ConfigOption(name="masq", type=bool, default=False),
         ConfigOption(name="masq_src", type=list, default=["0.0.0.0/0"]),
         ConfigOption(name="masq_dest", type=list, default=["0.0.0.0/0"]),
@@ -238,100 +239,112 @@ class ConfigZone(ConfigObject):
     def setup(self):
         self._interfaces = list()
 
+    def __commands_for_ifname(self, iptables, ifname, action, prio):
+        commands = list()
+
+        # Jump to zone input chain.
+        chain = "zone_{}_input".format(self.name)
+        cmd = start_iptables_command(iptables) + [
+                "--table", "filter",
+                action, "delegate_input",
+                "--in-interface", ifname,
+                "--jump", chain]
+        commands.append((prio, Command(cmd, self)))
+
+        # If conntrack is enabled, allow incoming traffic that is
+        # associated with allowed outgoing traffic.
+        if self.conntrack:
+            comment = "zone {} conntrack".format(self.name)
+            cmd = start_iptables_command(iptables) + [
+                    "--table", "filter",
+                    action, "input_rule",
+                    "--in-interface", ifname,
+                    "--match", "state", "--state", "ESTABLISHED,RELATED",
+                    "--match", "comment", "--comment", comment,
+                    "--jump", "ACCEPT"]
+            commands.append((prio, Command(cmd, self)))
+
+        # Implement default policy for zone.
+        comment = "zone {} default".format(self.name)
+        cmd = start_iptables_command(iptables) + [
+                "--table", "filter",
+                action, "input_rule",
+                "--in-interface", ifname,
+                "--match", "comment", "--comment", comment,
+                "--jump", self.input]
+        commands.append((prio, Command(cmd, self)))
+
+        # Jump to zone output chain.
+        chain = "zone_{}_output".format(self.name)
+        cmd = start_iptables_command(iptables) + [
+                "--table", "filter",
+                action, "delegate_output",
+                "--out-interface", ifname,
+                "--jump", chain]
+        commands.append((prio, Command(cmd, self)))
+
+        # Implement default policy for zone.
+        cmd = start_iptables_command(iptables) + [
+                "--table", "filter",
+                action, "output_rule",
+                "--out-interface", ifname,
+                "--match", "comment", "--comment", comment,
+                "--jump", self.output]
+        commands.append((prio, Command(cmd, self)))
+
+        # Jump to zone forward chain.
+        chain = "zone_{}_forward".format(self.name)
+        cmd = start_iptables_command(iptables) + [
+                "--table", "filter",
+                action, "delegate_forward",
+                "--in-interface", ifname,
+                "--jump", chain]
+        commands.append((prio, Command(cmd, self)))
+
+        # Implement default policy for zone.
+        cmd = start_iptables_command(iptables) + [
+                "--table", "filter",
+                action, "forward_rule",
+                "--in-interface", ifname,
+                "--match", "comment", "--comment", comment,
+                "--jump", self.forward]
+        commands.append((prio, Command(cmd, self)))
+
+        # Jump to zone prerouting chain.
+        chain = "zone_{}_prerouting".format(self.name)
+        cmd = start_iptables_command(iptables) + [
+                "--table", "nat",
+                action, "delegate_prerouting",
+                "--in-interface", ifname,
+                "--jump", chain]
+        commands.append((prio, Command(cmd, self)))
+
+        # Jump to zone postrouting chain.
+        chain = "zone_{}_postrouting".format(self.name)
+        cmd = start_iptables_command(iptables) + [
+                "--table", "nat",
+                action, "delegate_postrouting",
+                "--out-interface", ifname,
+                "--jump", chain]
+        commands.append((prio, Command(cmd, self)))
+
+        return commands
+
     def __commands_iptables(self, allConfigs, action, prio):
         commands = list()
 
-        for interface in self._interfaces:
-            for iptables in self.get_iptables():
-                # Jump to zone input chain.
-                chain = "zone_{}_input".format(self.name)
-                cmd = start_iptables_command(iptables) + [
-                        "--table", "filter",
-                        action, "delegate_input",
-                        "--in-interface", interface.config_ifname,
-                        "--jump", chain]
-                commands.append((prio, Command(cmd, self)))
+        for iptables in self.get_iptables():
+            # Directly configured interfaces that are not part of network definitions
+            for ifname in self.device:
+                commands.extend(self.__commands_for_ifname(iptables, ifname, action, prio))
 
-                # If conntrack is enabled, allow incoming traffic that is
-                # associated with allowed outgoing traffic.
-                if self.conntrack:
-                    comment = "zone {} conntrack".format(self.name)
-                    cmd = start_iptables_command(iptables) + [
-                            "--table", "filter",
-                            action, "input_rule",
-                            "--in-interface", interface.config_ifname,
-                            "--match", "state", "--state", "ESTABLISHED,RELATED",
-                            "--match", "comment", "--comment", comment,
-                            "--jump", "ACCEPT"]
-                    commands.append((prio, Command(cmd, self)))
+            for interface in self._interfaces:
+                commands.extend(self.__commands_for_ifname(iptables, interface.config_ifname, action, prio))
 
-                # Implement default policy for zone.
-                comment = "zone {} default".format(self.name)
-                cmd = start_iptables_command(iptables) + [
-                        "--table", "filter",
-                        action, "input_rule",
-                        "--in-interface", interface.config_ifname,
-                        "--match", "comment", "--comment", comment,
-                        "--jump", self.input]
-                commands.append((prio, Command(cmd, self)))
-
-                # Jump to zone output chain.
-                chain = "zone_{}_output".format(self.name)
-                cmd = start_iptables_command(iptables) + [
-                        "--table", "filter",
-                        action, "delegate_output",
-                        "--out-interface", interface.config_ifname,
-                        "--jump", chain]
-                commands.append((prio, Command(cmd, self)))
-
-                # Implement default policy for zone.
-                cmd = start_iptables_command(iptables) + [
-                        "--table", "filter",
-                        action, "output_rule",
-                        "--out-interface", interface.config_ifname,
-                        "--match", "comment", "--comment", comment,
-                        "--jump", self.output]
-                commands.append((prio, Command(cmd, self)))
-
-                # Jump to zone forward chain.
-                chain = "zone_{}_forward".format(self.name)
-                cmd = start_iptables_command(iptables) + [
-                        "--table", "filter",
-                        action, "delegate_forward",
-                        "--in-interface", interface.config_ifname,
-                        "--jump", chain]
-                commands.append((prio, Command(cmd, self)))
-
-                # Implement default policy for zone.
-                cmd = start_iptables_command(iptables) + [
-                        "--table", "filter",
-                        action, "forward_rule",
-                        "--in-interface", interface.config_ifname,
-                        "--match", "comment", "--comment", comment,
-                        "--jump", self.forward]
-                commands.append((prio, Command(cmd, self)))
-
-                # Jump to zone prerouting chain.
-                chain = "zone_{}_prerouting".format(self.name)
-                cmd = start_iptables_command(iptables) + [
-                        "--table", "nat",
-                        action, "delegate_prerouting",
-                        "--in-interface", interface.config_ifname,
-                        "--jump", chain]
-                commands.append((prio, Command(cmd, self)))
-
-                # Jump to zone postrouting chain.
-                chain = "zone_{}_postrouting".format(self.name)
-                cmd = start_iptables_command(iptables) + [
-                        "--table", "nat",
-                        action, "delegate_postrouting",
-                        "--out-interface", interface.config_ifname,
-                        "--jump", chain]
-                commands.append((prio, Command(cmd, self)))
-
-            # Masquerade rules are for IPv4 only, so add them outside the
-            # iptables loop above.
-            if self.masq:
+        # Masquerade rules are for IPv4 only, so add them outside the
+        # iptables loop above.
+        if self.masq:
+            for interface in self._interfaces:
                 for src in self.masq_src:
                     for dest in self.masq_dest:
                         comment = "zone {} masq".format(self.name)
